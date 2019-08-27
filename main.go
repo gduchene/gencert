@@ -84,7 +84,7 @@ func init() {
 	flag.Var(&ips, "ip", "IP address")
 	flag.Var(&org, "o", "organization")
 	flag.Var(&unit, "ou", "organizational unit")
-	flag.Var(&until, "end-date", "certificate end date")
+	flag.Var(&until, "na", "the time past which the certificate is no longer valid")
 }
 
 func newSerial() *big.Int {
