@@ -83,7 +83,7 @@ func init() {
 	flag.Var(&from, "start-date", "certificate start date")
 	flag.Var(&ips, "ip", "IP address")
 	flag.Var(&org, "o", "organization")
-	flag.Var(&unit, "ou", "organization unit")
+	flag.Var(&unit, "ou", "organizational unit")
 	flag.Var(&until, "end-date", "certificate end date")
 }
 
