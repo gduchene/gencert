@@ -80,7 +80,7 @@ var (
 
 func init() {
 	flag.Var(&dnsNames, "dns", "DNS name")
-	flag.Var(&from, "start-date", "certificate start date")
+	flag.Var(&from, "nb", "the earliest time on which the certificate is valid")
 	flag.Var(&ips, "ip", "IP address")
 	flag.Var(&org, "o", "organization")
 	flag.Var(&unit, "ou", "organizational unit")
