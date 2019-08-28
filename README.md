@@ -9,7 +9,7 @@ be useful to do PKI on things that only live on your LAN.
 ```shell
 # Generate a self-signed certificate.
 # This generates ~/out/my-ca.crt and ~/out/my-ca.key.
-$ gencert             \
+$ gencert ca          \
     -c US             \
     -o example.com    \
     -cn 'My CA'       \
@@ -19,7 +19,7 @@ $ gencert             \
 # Generate a normal certificate.
 # This reads ~/out/my-ca.crt and ~/out/my-ca.key, and generates
 # ~/out/my-site.crt and ~/my-site.key.
-$ gencert                \
+$ gencert cert           \
     -ca ~/out/my-ca      \
     -c US                \
     -o example.com       \
