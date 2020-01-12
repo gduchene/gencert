@@ -116,6 +116,20 @@ Use %[1]s <command> -h for help about that command.
 	}
 }
 
+func extKeyUsage() []x509.ExtKeyUsage {
+	if os.Args[1] == "ca" {
+		return nil
+	}
+	return []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth}
+}
+
+func keyUsage() x509.KeyUsage {
+	if os.Args[1] == "ca" {
+		return x509.KeyUsageCertSign
+	}
+	return x509.KeyUsageDigitalSignature
+}
+
 func newSerial() *big.Int {
 	// Bound the number generation so the serial number does not take
 	// up more than 20 octets. See Section 4.1.2.2 of RFC 5280 for more
@@ -180,23 +194,13 @@ func main() {
 	if err != nil {
 		log.Fatalln("error: could not generate the certificate key:", err)
 	}
-	var (
-		keyUsage    x509.KeyUsage
-		extKeyUsage []x509.ExtKeyUsage
-	)
-	if os.Args[1] == "ca" {
-		keyUsage = x509.KeyUsageCertSign
-	} else {
-		keyUsage = x509.KeyUsageDigitalSignature
-		extKeyUsage = append(extKeyUsage, x509.ExtKeyUsageServerAuth)
-	}
 	tmpl := &x509.Certificate{
 		BasicConstraintsValid: os.Args[1] == "ca",
 		DNSNames:              dnsNames,
-		ExtKeyUsage:           extKeyUsage,
+		ExtKeyUsage:           extKeyUsage(),
 		IPAddresses:           ips,
 		IsCA:                  os.Args[1] == "ca",
-		KeyUsage:              keyUsage,
+		KeyUsage:              keyUsage(),
 		NotBefore:             from.t,
 		NotAfter:              until.t,
 		SerialNumber:          newSerial(),
