@@ -233,11 +233,18 @@ func main() {
 			log.Fatalln("error: could not parse the CA certificate:", err)
 		}
 	}
+	if tmpl.NotBefore.Before(parentCert.NotBefore) {
+		log.Fatalf("error: certificate starts before (%v) its parent (%v)",
+			tmpl.NotBefore, parentCert.NotBefore)
+	}
+	if tmpl.NotAfter.After(parentCert.NotAfter) {
+		log.Fatalf("error: certificate expires after (%v) its parent (%v)",
+			tmpl.NotAfter, parentCert.NotAfter)
+	}
 	cert, err := x509.CreateCertificate(rand.Reader, tmpl, parentCert, &key.PublicKey, parentKey)
 	if err != nil {
 		log.Fatalln("error: could not generate the certificate:", err)
 	}
-
 	keyOut, err := os.OpenFile(out+".key", os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0600)
 	if err != nil {
 		log.Fatalln("error: could not create the private key:", err)
