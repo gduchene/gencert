@@ -180,11 +180,11 @@ func main() {
 	}
 	if until.t.IsZero() {
 		if duration == 0 {
-			log.Fatalln("error: -end-date is required when no -d is passed")
+			log.Fatalln("error: -na is required when no -d is passed")
 		}
 		until.t = from.t.Add(duration)
 	} else if duration != 0 {
-		log.Println("warning: ignored -d as -end-date was passed")
+		log.Println("warning: ignored -d as -na was passed")
 	}
 	if until.t.Before(from.t) {
 		log.Fatalln("error: end date is before the start date")
