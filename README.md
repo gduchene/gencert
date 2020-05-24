@@ -7,6 +7,9 @@ be useful to do PKI on things that only live on your LAN.
 ## Examples
 
 ```shell
+# Install gencert.
+$ go install go.awhk.org/gencert
+
 # Generate a self-signed certificate.
 # This generates ~/out/my-ca.crt and ~/out/my-ca.key.
 $ gencert ca          \
