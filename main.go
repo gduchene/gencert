@@ -210,6 +210,8 @@ func main() {
 			Organization:       org,
 			OrganizationalUnit: unit,
 		},
+		// See RFC 5280§4.2.1.2, a unique value is sufficient.
+		SubjectKeyId: newSerial().Bytes(),
 	}
 	parentKey := key
 	parentCert := tmpl
@@ -232,6 +234,7 @@ func main() {
 		if err != nil {
 			log.Fatalln("error: could not parse the CA certificate:", err)
 		}
+		tmpl.AuthorityKeyId = parentCert.SubjectKeyId
 	}
 	if tmpl.NotBefore.Before(parentCert.NotBefore) {
 		log.Fatalf("error: certificate starts before (%v) its parent (%v)",
