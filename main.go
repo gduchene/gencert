@@ -127,7 +127,6 @@ Use %[1]s <command> -h for help about that command.
 }
 
 func main() {
-	flag.Parse()
 	if len(os.Args) == 1 {
 		flag.Usage()
 		os.Exit(2)
