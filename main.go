@@ -20,6 +20,7 @@ import (
 	"math/big"
 	"net"
 	"os"
+	"sort"
 	"time"
 )
 
@@ -167,6 +168,11 @@ func main() {
 	if country == "" {
 		log.Fatalln("error: -c is required")
 	}
+	// See RFC 6125§6.4.4.
+	if len(dnsNames) > 0 || len(ips) > 0 {
+		dnsNames = append(dnsNames, commonName)
+	}
+	sort.Strings(dnsNames)
 	if from.t.IsZero() {
 		from.t = time.Now()
 	}
