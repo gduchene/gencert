@@ -26,8 +26,7 @@ import (
 type IPListFlag []net.IP
 
 func (f *IPListFlag) String() string {
-	var l []net.IP = *f
-	return fmt.Sprintf("%s", l)
+	return fmt.Sprintf("%s", []net.IP(*f))
 }
 
 func (f *IPListFlag) Set(s string) error {
@@ -42,8 +41,7 @@ func (f *IPListFlag) Set(s string) error {
 type StringListFlag []string
 
 func (f *StringListFlag) String() string {
-	var l []string = *f
-	return fmt.Sprintf("%s", l)
+	return fmt.Sprintf("%s", []string(*f))
 }
 
 func (f *StringListFlag) Set(s string) error {
