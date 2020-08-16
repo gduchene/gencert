@@ -78,6 +78,7 @@ var (
 	out        string
 	unit       StringListFlag
 	until      TimeFlag
+	usages     = StringListFlag{"server-auth"}
 )
 
 func init() {
@@ -96,6 +97,10 @@ func init() {
 	certFlags.StringVar(&caName, "ca", "", "base name for the CA files")
 	certFlags.Var(&dnsNames, "dns", "DNS name")
 	certFlags.Var(&ips, "ip", "IP address")
+	certFlags.Var(&usages, "usage", `how the certificate will be used:
+  - code-signing
+  - server-auth
+`)
 
 	flag.Usage = func() {
 		fmt.Fprintf(flag.CommandLine.Output(), `%s is a tool for generating certificates.
@@ -119,7 +124,22 @@ func extKeyUsage() []x509.ExtKeyUsage {
 	if os.Args[1] == "ca" {
 		return nil
 	}
-	return []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth}
+	s := map[string]x509.ExtKeyUsage{}
+	for _, e := range usages {
+		switch e {
+		case "code-signing":
+			s[e] = x509.ExtKeyUsageCodeSigning
+		case "server-auth":
+			s[e] = x509.ExtKeyUsageServerAuth
+		default:
+			log.Fatalln("error: unknown key usage:", e)
+		}
+	}
+	es := []x509.ExtKeyUsage{}
+	for _, e := range s {
+		es = append(es, e)
+	}
+	return es
 }
 
 func keyUsage() x509.KeyUsage {

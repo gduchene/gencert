@@ -29,5 +29,6 @@ $ gencert cert           \
     -cn 'My Server'      \
     -d $((10 * 24))h     \
     -dns www.example.com \
+    -usage server-auth   \
     -out ~/out/my-site
 ```
