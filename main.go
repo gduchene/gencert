@@ -126,85 +126,6 @@ Use %[1]s <command> -h for help about that command.
 	}
 }
 
-func extKeyUsage() []x509.ExtKeyUsage {
-	if os.Args[1] == "ca" {
-		return nil
-	}
-	s := map[string]x509.ExtKeyUsage{}
-	for _, e := range usages {
-		switch e {
-		case "code-signing":
-			s[e] = x509.ExtKeyUsageCodeSigning
-		case "server-auth":
-			s[e] = x509.ExtKeyUsageServerAuth
-		default:
-			log.Fatalln("error: unknown key usage:", e)
-		}
-	}
-	es := []x509.ExtKeyUsage{}
-	for _, e := range s {
-		es = append(es, e)
-	}
-	return es
-}
-
-func keyPair() (interface{}, interface{}, error) {
-	switch keyAlgo {
-	case "ecdsa":
-		key, err := ecdsa.GenerateKey(elliptic.P384(), rand.Reader)
-		if err != nil {
-			return nil, nil, err
-		}
-		return key, &key.PublicKey, nil
-
-	case "rsa":
-		key, err := rsa.GenerateKey(rand.Reader, 2048)
-		if err != nil {
-			return nil, nil, err
-		}
-		return key, &key.PublicKey, nil
-
-	default:
-		return nil, nil, fmt.Errorf("unsupported algorithm: %s", keyAlgo)
-	}
-}
-
-func keyUsage() x509.KeyUsage {
-	if os.Args[1] == "ca" {
-		return x509.KeyUsageCertSign
-	}
-	return x509.KeyUsageDigitalSignature
-}
-
-func newSerial() *big.Int {
-	// Bound the number generation so the serial number does not take
-	// up more than 20 octets. See Section 4.1.2.2 of RFC 5280 for more
-	// details (https://tools.ietf.org/html/rfc5280#section-4.1.2.2).
-	max := big.NewInt(2)
-	max = max.Lsh(max, 159)
-	max = max.Sub(max, big.NewInt(1))
-	x, err := rand.Int(rand.Reader, max)
-	if err != nil {
-		panic(err)
-	}
-	// We generated a random number between between [0, 2^160 - 1), so we
-	// increment the result to get a serial number between [1, 2^160) as
-	// serial numbers must be positive non-zero integers. See Erratum 3200
-	// for more details (https://www.rfc-editor.org/errata/eid3200).
-	return x.Add(x, big.NewInt(1))
-}
-
-func parsePrivateKey(b *pem.Block) (interface{}, error) {
-	switch b.Type {
-	case "EC PRIVATE KEY":
-		return x509.ParseECPrivateKey(b.Bytes)
-	case "PRIVATE KEY":
-		return x509.ParsePKCS8PrivateKey(b.Bytes)
-	default:
-		return nil, fmt.Errorf("unsupported private key type: %s", b.Type)
-	}
-}
-
 func main() {
 	flag.Parse()
 	if len(os.Args) == 1 {
@@ -341,5 +262,84 @@ func main() {
 		Bytes: cert,
 	}); err != nil {
 		log.Fatalln("error: could not encode the certificate:", err)
+	}
+}
+
+func extKeyUsage() []x509.ExtKeyUsage {
+	if os.Args[1] == "ca" {
+		return nil
+	}
+	s := map[string]x509.ExtKeyUsage{}
+	for _, e := range usages {
+		switch e {
+		case "code-signing":
+			s[e] = x509.ExtKeyUsageCodeSigning
+		case "server-auth":
+			s[e] = x509.ExtKeyUsageServerAuth
+		default:
+			log.Fatalln("error: unknown key usage:", e)
+		}
+	}
+	es := []x509.ExtKeyUsage{}
+	for _, e := range s {
+		es = append(es, e)
+	}
+	return es
+}
+
+func keyPair() (interface{}, interface{}, error) {
+	switch keyAlgo {
+	case "ecdsa":
+		key, err := ecdsa.GenerateKey(elliptic.P384(), rand.Reader)
+		if err != nil {
+			return nil, nil, err
+		}
+		return key, &key.PublicKey, nil
+
+	case "rsa":
+		key, err := rsa.GenerateKey(rand.Reader, 2048)
+		if err != nil {
+			return nil, nil, err
+		}
+		return key, &key.PublicKey, nil
+
+	default:
+		return nil, nil, fmt.Errorf("unsupported algorithm: %s", keyAlgo)
+	}
+}
+
+func keyUsage() x509.KeyUsage {
+	if os.Args[1] == "ca" {
+		return x509.KeyUsageCertSign
+	}
+	return x509.KeyUsageDigitalSignature
+}
+
+func newSerial() *big.Int {
+	// Bound the number generation so the serial number does not take
+	// up more than 20 octets. See Section 4.1.2.2 of RFC 5280 for more
+	// details (https://tools.ietf.org/html/rfc5280#section-4.1.2.2).
+	max := big.NewInt(2)
+	max = max.Lsh(max, 159)
+	max = max.Sub(max, big.NewInt(1))
+	x, err := rand.Int(rand.Reader, max)
+	if err != nil {
+		panic(err)
+	}
+	// We generated a random number between between [0, 2^160 - 1), so we
+	// increment the result to get a serial number between [1, 2^160) as
+	// serial numbers must be positive non-zero integers. See Erratum 3200
+	// for more details (https://www.rfc-editor.org/errata/eid3200).
+	return x.Add(x, big.NewInt(1))
+}
+
+func parsePrivateKey(b *pem.Block) (interface{}, error) {
+	switch b.Type {
+	case "EC PRIVATE KEY":
+		return x509.ParseECPrivateKey(b.Bytes)
+	case "PRIVATE KEY":
+		return x509.ParsePKCS8PrivateKey(b.Bytes)
+	default:
+		return nil, fmt.Errorf("unsupported private key type: %s", b.Type)
 	}
 }
