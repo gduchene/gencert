@@ -9,6 +9,7 @@ import (
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
+	"crypto/rsa"
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/pem"
@@ -74,6 +75,7 @@ var (
 	duration   time.Duration
 	from       TimeFlag
 	ips        IPListFlag
+	keyAlgo    string
 	org        StringListFlag
 	out        string
 	unit       StringListFlag
@@ -88,6 +90,10 @@ func init() {
 		f.StringVar(&commonName, "cn", "", "common name")
 		f.StringVar(&country, "c", "", "country code")
 		f.DurationVar(&duration, "d", 0, "certificate duration")
+		f.StringVar(&keyAlgo, "key-algo", "ecdsa", `key algorithm:
+  - ecdsa
+  - rsa
+`)
 		f.Var(&from, "nb", "the earliest time on which the certificate is valid")
 		f.Var(&org, "o", "organization")
 		f.StringVar(&out, "out", "", "base name for the output")
@@ -142,6 +148,27 @@ func extKeyUsage() []x509.ExtKeyUsage {
 	return es
 }
 
+func keyPair() (interface{}, interface{}, error) {
+	switch keyAlgo {
+	case "ecdsa":
+		key, err := ecdsa.GenerateKey(elliptic.P384(), rand.Reader)
+		if err != nil {
+			return nil, nil, err
+		}
+		return key, &key.PublicKey, nil
+
+	case "rsa":
+		key, err := rsa.GenerateKey(rand.Reader, 2048)
+		if err != nil {
+			return nil, nil, err
+		}
+		return key, &key.PublicKey, nil
+
+	default:
+		return nil, nil, fmt.Errorf("unsupported algorithm: %s", keyAlgo)
+	}
+}
+
 func keyUsage() x509.KeyUsage {
 	if os.Args[1] == "ca" {
 		return x509.KeyUsageCertSign
@@ -165,6 +192,17 @@ func newSerial() *big.Int {
 	// serial numbers must be positive non-zero integers. See Erratum 3200
 	// for more details (https://www.rfc-editor.org/errata/eid3200).
 	return x.Add(x, big.NewInt(1))
+}
+
+func parsePrivateKey(b *pem.Block) (interface{}, error) {
+	switch b.Type {
+	case "EC PRIVATE KEY":
+		return x509.ParseECPrivateKey(b.Bytes)
+	case "PRIVATE KEY":
+		return x509.ParsePKCS8PrivateKey(b.Bytes)
+	default:
+		return nil, fmt.Errorf("unsupported private key type: %s", b.Type)
+	}
 }
 
 func main() {
@@ -214,7 +252,7 @@ func main() {
 		log.Fatalln("error: end date is before the start date")
 	}
 
-	key, err := ecdsa.GenerateKey(elliptic.P384(), rand.Reader)
+	key, pubKey, err := keyPair()
 	if err != nil {
 		log.Fatalln("error: could not generate the certificate key:", err)
 	}
@@ -245,7 +283,10 @@ func main() {
 			log.Fatalln("error: could not read the CA private key:", err)
 		}
 		block, _ := pem.Decode(buf)
-		parentKey, err = x509.ParseECPrivateKey(block.Bytes)
+		if block == nil {
+			log.Fatalln("error: could not decode the private key block")
+		}
+		parentKey, err = parsePrivateKey(block)
 		if err != nil {
 			log.Fatalln("error: could not parse the CA private key:", err)
 		}
@@ -254,6 +295,9 @@ func main() {
 			log.Fatalln("error: could not read the CA certificate:", err)
 		}
 		block, _ = pem.Decode(buf)
+		if block == nil {
+			log.Fatalln("error: could not decode the certificate block")
+		}
 		parentCert, err = x509.ParseCertificate(block.Bytes)
 		if err != nil {
 			log.Fatalln("error: could not parse the CA certificate:", err)
@@ -268,7 +312,7 @@ func main() {
 		log.Fatalf("error: certificate expires after (%v) its parent (%v)",
 			tmpl.NotAfter, parentCert.NotAfter)
 	}
-	cert, err := x509.CreateCertificate(rand.Reader, tmpl, parentCert, &key.PublicKey, parentKey)
+	cert, err := x509.CreateCertificate(rand.Reader, tmpl, parentCert, pubKey, parentKey)
 	if err != nil {
 		log.Fatalln("error: could not generate the certificate:", err)
 	}
@@ -282,12 +326,12 @@ func main() {
 		log.Fatalln("error: could not create the certificate:", err)
 	}
 	defer certOut.Close()
-	keyBytes, err := x509.MarshalECPrivateKey(key)
+	keyBytes, err := x509.MarshalPKCS8PrivateKey(key)
 	if err != nil {
 		log.Fatalln("error: could not serialize the private key:", err)
 	}
 	if err := pem.Encode(keyOut, &pem.Block{
-		Type:  "EC PRIVATE KEY",
+		Type:  "PRIVATE KEY",
 		Bytes: keyBytes,
 	}); err != nil {
 		log.Fatalln("error: could not encode the private key:", err)
