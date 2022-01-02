@@ -16,7 +16,6 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"math/big"
 	"net"
@@ -198,7 +197,7 @@ func main() {
 	parentKey := key
 	parentCert := tmpl
 	if caName != "" {
-		buf, err := ioutil.ReadFile(caName + ".key")
+		buf, err := os.ReadFile(caName + ".key")
 		if err != nil {
 			log.Fatalln("error: could not read the CA private key:", err)
 		}
@@ -210,7 +209,7 @@ func main() {
 		if err != nil {
 			log.Fatalln("error: could not parse the CA private key:", err)
 		}
-		buf, err = ioutil.ReadFile(caName + ".crt")
+		buf, err = os.ReadFile(caName + ".crt")
 		if err != nil {
 			log.Fatalln("error: could not read the CA certificate:", err)
 		}
