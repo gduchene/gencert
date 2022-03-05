@@ -6,6 +6,7 @@
 package main
 
 import (
+	"crypto"
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
@@ -285,7 +286,7 @@ func extKeyUsage() []x509.ExtKeyUsage {
 	return es
 }
 
-func keyPair() (interface{}, interface{}, error) {
+func keyPair() (crypto.PrivateKey, crypto.PublicKey, error) {
 	switch keyAlgo {
 	case "ecdsa":
 		key, err := ecdsa.GenerateKey(elliptic.P384(), rand.Reader)
@@ -331,7 +332,7 @@ func newSerial() *big.Int {
 	return x.Add(x, big.NewInt(1))
 }
 
-func parsePrivateKey(b *pem.Block) (interface{}, error) {
+func parsePrivateKey(b *pem.Block) (crypto.PrivateKey, error) {
 	switch b.Type {
 	case "EC PRIVATE KEY":
 		return x509.ParseECPrivateKey(b.Bytes)
